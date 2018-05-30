@@ -5,6 +5,8 @@
 // replace certain things
 // reset the content
 
+// testing clasp functionality
+
 // look into this : https://developers.google.com/apps-script/guides/triggers/installable
 // can trigger on document opening or by time!
 
