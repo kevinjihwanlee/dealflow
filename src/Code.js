@@ -8,7 +8,7 @@
 // testing clasp functionality
 
 // look into this : https://developers.google.com/apps-script/guides/triggers/installable
-// can trigger on document opening or by time!
+// can trigger on document opening or by time! 
 
 function createDocumentOpenTrigger() {
   var doc = DocumentApp.openByUrl('https://docs.google.com/document/d/1O1jU-DypJflBggimwKLmNosmJhdVOr6trN7xdjKOwoU/edit');
