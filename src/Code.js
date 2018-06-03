@@ -1,11 +1,16 @@
-// find the document
-// open it
-// check for certain things
-// there is a findText function for docs!
-// replace certain things
-// reset the content
+function checkSpreadsheet() {
+ var ss = SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1ynzSOlH58Plmv9xYCLRa375mQq_RYJdFXrRUUUG9tc4/edit#gid=0");
+ var sheet = ss.getSheets()[0];
 
-// testing clasp functionality
+ // The two samples below produce the same output
+ var values = sheet.getSheetValues(1, 1, -1, -1);
+ Logger.log(values);
+
+ //var range = sheet.getRange(1, 1, 3, 3);
+ //values = range.getValues();
+ //Logger.log(values);
+  
+}
 
 // look into this : https://developers.google.com/apps-script/guides/triggers/installable
 // can trigger on document opening or by time! 
@@ -64,6 +69,10 @@ var Category = function(name, color){
 
 // initialization with dummy categories
 function initializeCategoryDictionary(){
+  // taken from the following link
+  // https://stackoverflow.com/questions/5092808/how-do-i-randomly-generate-html-hex-color-codes-using-javascript
+  var randomColor = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
+
   var cDict = new Dict();
   var date = new Category("{date}", "#40e0d0");
   cDict.addCategory(date);
