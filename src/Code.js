@@ -15,32 +15,85 @@ function myFunction(){
   Logger.log("The trigger has occurred on open.")
 }
 
-// curated list of colors for highlighting - picked from the third row of flat design color chart
-// https://htmlcolorcodes.com/color-chart/
-var colors = [
-  "#E6B0AA",
-  "#D7BDE2",
-  "#A9CCE3",
-  "#A3E4D7",
-  "#A9DFBF",
-  "#F9E79F",
-  "#F5CBA7",
-];
-
-// holds info for each category: name, color, dictionary of all words 
+// holds info for each category: name, color, current value of the category
 var Category = function(name, color){
   this.name = name;
   this.color = color;
-  this.catDict = [];
-
-  //this.addInstance = function(elem){
-  //  this.catDict.addCategory(elem);
-  //}
+  this.currentValue = "";
 };
+
+// initializeCategoriesInDoc
+// input: name of document as string
+// output: array of Categories from this one document
+function initializeCategoriesInDoc(url){
+  var categories = [];
+  // curated list of colors for highlighting - picked from the third row of flat design color chart
+  // https://htmlcolorcodes.com/color-chart/
+  var colors = [
+    "#E6B0AA",
+    "#D7BDE2",
+    "#A9CCE3",
+    "#A3E4D7",
+    "#A9DFBF",
+    "#F9E79F",
+    "#F5CBA7",
+  ];
+  var counter = 0;
+  var uniqueCategories = [];
+  var doc = DocumentApp.openByUrl(url).getBody();
+  var allParagraphs = doc.getParagraphs();
+  for each(var par in allParagraphs){
+    var fullString = par.getText();
+    if(fullString != ""){
+      var currPos = 0;
+      var endPos = fullString.length;
+      var withinCategory = new Boolean(false);
+      var position = {
+        beginning: 0,
+        end: 0,
+      }
+      while(currPos < endPos){
+        var char = fullString.substring(currPos, currPos + 1);
+        if(withinCategory == false && char == "{"){  
+          position.beginning = currPos;
+          withinCategory = true;
+        }
+        else{
+          if(char == "}"){
+            position.end = currPos + 1;
+            var word = fullString.substring(position.beginning, position.end);
+            if(!(uniqueCategories.indexOf(word) > -1)){
+              var category = new Category(word, colors[counter]);
+              Logger.log(category);
+              categories.push(category);
+              uniqueCategories.push(word);
+              counter++;
+            }
+            withinCategory = false;
+          }
+        }
+        currPos++;
+      }
+    }
+  }
+  return categories;
+}
+
 
 // need to initialize 
 // initialization with dummy categories
 function initializeCategoryDictionary(){
+  // curated list of colors for highlighting - picked from the third row of flat design color chart
+  // https://htmlcolorcodes.com/color-chart/
+  var colors = [
+    "#E6B0AA",
+    "#D7BDE2",
+    "#A9CCE3",
+    "#A3E4D7",
+    "#A9DFBF",
+    "#F9E79F",
+    "#F5CBA7",
+  ];
   var cDict = [];
   var ss = SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1ynzSOlH58Plmv9xYCLRa375mQq_RYJdFXrRUUUG9tc4/edit#gid=0");
   var sheet = ss.getSheets()[0];
@@ -157,18 +210,27 @@ function searchAndReplace(url) {
         item.getElement().asText().setBackgroundColor(item.getStartOffset(),item.getEndOffsetInclusive(), dict[i].color);
         
         // add to dictionary of current category
-        dict[i].catDict.push(item);
+        // I don't think this does something as of rn
+        // dict[i].catDict = item;
 
         // find the next instance of category in the same full string of paragraph
         item = par.findText(dict[i].name, item);
       }
     }
   }
+  Logger.log(dict);
 }
 
-function test(){
+function main(){
   var allFiles = allFilesInFolder('dealflow');
-  for each (var url in allFiles){
-    searchAndReplace(url);
-  }
+  
+  // TODO: scan through all files and initialize a category dictionary
+  // TODO: add trigger functions to each files while scanning - on open, all documents are scanned and checked for differences,
+  //       and then each file is updated accordingly
+  
+  ///for each (var url in allFiles){
+  ///  searchAndReplace(url);
+  ///}
+  
+  initializeCategoriesInDoc("https://docs.google.com/document/d/1Vh90jt3KDO6EH--RgZW6IwNcZZbGfo00Vxaffw2L5u0/edit");
 }
