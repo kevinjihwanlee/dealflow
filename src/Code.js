@@ -15,6 +15,18 @@ function myFunction(){
   Logger.log("The trigger has occurred on open.")
 }
 
+// curated list of colors for highlighting - picked from the third row of flat design color chart
+// https://htmlcolorcodes.com/color-chart/
+var colors = [
+  "#E6B0AA",
+  "#D7BDE2",
+  "#A9CCE3",
+  "#A3E4D7",
+  "#A9DFBF",
+  "#F9E79F",
+  "#F5CBA7",
+];
+
 // holds info for each category: name, color, dictionary of all words 
 var Category = function(name, color){
   this.name = name;
@@ -33,12 +45,14 @@ function initializeCategoryDictionary(){
   var ss = SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1ynzSOlH58Plmv9xYCLRa375mQq_RYJdFXrRUUUG9tc4/edit#gid=0");
   var sheet = ss.getSheets()[0];
   var values = sheet.getSheetValues(1, 1, -1, -1);
+  var counter = 0;
   for each(var value in values){
     // taken from the following link
     // https://stackoverflow.com/questions/5092808/how-do-i-randomly-generate-html-hex-color-codes-using-javascript
-    var randomColor = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
-    var category = new Category(value[0], randomColor);
+    // var randomColor = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
+    var category = new Category(value[0], colors[counter]);
     cDict.push(category);
+    counter++;
     // TODO - have a function that just goes through all the categories and assigns colors, put it in the spreadsheet
   }
   //var date = new Category("{date}", "#40e0d0");
