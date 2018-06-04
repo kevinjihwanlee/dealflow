@@ -127,57 +127,37 @@ function initializeAllCategories(url){
     entry.push(item.currentValue);
     sheet.appendRow(entry);
   }
-  Logger.log(finalCats);
+  //Logger.log(finalCats);
   return ss.getUrl();
 }
-// need to initialize 
-// initialization with dummy categories
-function initializeCategoryDictionary(){
-  // curated list of colors for highlighting - picked from the third row of flat design color chart
-  // https://htmlcolorcodes.com/color-chart/
-  var colors = [
-    "#E6B0AA",
-    "#D7BDE2",
-    "#A9CCE3",
-    "#A3E4D7",
-    "#A9DFBF",
-    "#F9E79F",
-    "#F5CBA7",
-  ];
-  var cDict = [];
-  var ss = SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1ynzSOlH58Plmv9xYCLRa375mQq_RYJdFXrRUUUG9tc4/edit#gid=0");
+
+function colorCategories(dictUrl, docUrls){
+  var ss = SpreadsheetApp.openByUrl(dictUrl)
   var sheet = ss.getSheets()[0];
   var values = sheet.getSheetValues(1, 1, -1, -1);
-  var counter = 0;
+  var categories = [];
   for each(var value in values){
-    // taken from the following link
-    // https://stackoverflow.com/questions/5092808/how-do-i-randomly-generate-html-hex-color-codes-using-javascript
-    // var randomColor = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
-    var category = new Category(value[0], colors[counter]);
-    cDict.push(category);
-    counter++;
-    // TODO - have a function that just goes through all the categories and assigns colors, put it in the spreadsheet
+    cat = new Category(value[0], value[1], value[2]);
+    categories.push(cat);
   }
-  //var date = new Category("{date}", "#40e0d0");
-  //cDict.addCategory(date);
-  //var x = new Category("{x}", "#c48891");
-  //cDict.addCategory(x);
-  //var y = new Category("{y}", "#acc9ec");
-  //cDict.addCategory(y);
-  //var z = new Category("{z}", "#ffff94");
-  //cDict.addCategory(z);
-  
-  return cDict;
+  for each(var url in docUrls){
+    var doc = DocumentApp.openByUrl(url).getBody();
+    var allParagraphs = doc.getParagraphs();
+    for each(var par in allParagraphs){
+      // go through each category type; highlight and locate each instance of each category accordingly
+      for (var i=0; i<categories.length; i++){    
+        // find first instance of category
+        var item = par.findText(categories[i].name);
+        while (item != null){
+          item.getElement().asText().setBackgroundColor(item.getStartOffset(),item.getEndOffsetInclusive(), categories[i].color);
+          // find the next instance of category in the same full string of paragraph
+          item = par.findText(categories[i].name, item);
+        }
+      }
+    }
+  }
+  Logger.log(categories);
 }
-
-function checkSpreadsheet() {
- var ss = SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1ynzSOlH58Plmv9xYCLRa375mQq_RYJdFXrRUUUG9tc4/edit#gid=0");
- var sheet = ss.getSheets()[0];
- var values = sheet.getSheetValues(1, 1, -1, -1);
- Logger.log(values);
-
-}
-
 
 function searchAndReplace(url) {
   var dict = initializeCategoryDictionary();
@@ -264,5 +244,5 @@ function main(){
   ///  searchAndReplace(url);
   ///}
   
-  initializeAllCategories();
+  colorCategories(initializeAllCategories(), allFiles);
 }
