@@ -1,17 +1,3 @@
-function checkSpreadsheet() {
- var ss = SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1ynzSOlH58Plmv9xYCLRa375mQq_RYJdFXrRUUUG9tc4/edit#gid=0");
- var sheet = ss.getSheets()[0];
-
- // The two samples below produce the same output
- var values = sheet.getSheetValues(1, 1, -1, -1);
- Logger.log(values);
-
- //var range = sheet.getRange(1, 1, 3, 3);
- //values = range.getValues();
- //Logger.log(values);
-  
-}
-
 // look into this : https://developers.google.com/apps-script/guides/triggers/installable
 // can trigger on document opening or by time! 
 
@@ -29,6 +15,51 @@ function myFunction(){
   Logger.log("The trigger has occurred on open.")
 }
 
+// holds info for each category: name, color, dictionary of all words 
+var Category = function(name, color){
+  this.name = name;
+  this.color = color;
+  this.catDict = [];
+
+  //this.addInstance = function(elem){
+  //  this.catDict.addCategory(elem);
+  //}
+};
+
+// need to initialize 
+// initialization with dummy categories
+function initializeCategoryDictionary(){
+  var cDict = [];
+  var ss = SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1ynzSOlH58Plmv9xYCLRa375mQq_RYJdFXrRUUUG9tc4/edit#gid=0");
+  var sheet = ss.getSheets()[0];
+  var values = sheet.getSheetValues(1, 1, -1, -1);
+  for each(var value in values){
+    // taken from the following link
+    // https://stackoverflow.com/questions/5092808/how-do-i-randomly-generate-html-hex-color-codes-using-javascript
+    var randomColor = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
+    var category = new Category(value[0], randomColor);
+    cDict.push(category);
+    // TODO - have a function that just goes through all the categories and assigns colors, put it in the spreadsheet
+  }
+  //var date = new Category("{date}", "#40e0d0");
+  //cDict.addCategory(date);
+  //var x = new Category("{x}", "#c48891");
+  //cDict.addCategory(x);
+  //var y = new Category("{y}", "#acc9ec");
+  //cDict.addCategory(y);
+  //var z = new Category("{z}", "#ffff94");
+  //cDict.addCategory(z);
+  
+  return cDict;
+}
+
+function checkSpreadsheet() {
+ var ss = SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1ynzSOlH58Plmv9xYCLRa375mQq_RYJdFXrRUUUG9tc4/edit#gid=0");
+ var sheet = ss.getSheets()[0];
+ var values = sheet.getSheetValues(1, 1, -1, -1);
+ Logger.log(values);
+
+}
 
 // allFilesInFolder
 // input: name of folder as string
@@ -41,49 +72,12 @@ function allFilesInFolder(name){
     var files = folder.getFiles();
     while(files.hasNext()){
       var file = files.next();
-      urls.push(file.getUrl());
+      if(file.getUrl().indexOf('spreadsheets') == -1){
+         urls.push(file.getUrl());
+      }
     }
   }
   return urls;
-}
-
-// holds all category types
-var Dict = function(){
-  this.dict = [];
-
-  this.addCategory = function(category){
-    this.dict.push(category);
-  }
-};
-
-// holds info for each category: name, color, dictionary of all words 
-var Category = function(name, color){
-  this.name = name;
-  this.color = color;
-  this.catDict = [];
-
-  this.addInstance = function(elem){
-    this.catDict.addCategory(elem);
-  }
-};
-
-// initialization with dummy categories
-function initializeCategoryDictionary(){
-  // taken from the following link
-  // https://stackoverflow.com/questions/5092808/how-do-i-randomly-generate-html-hex-color-codes-using-javascript
-  var randomColor = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
-
-  var cDict = new Dict();
-  var date = new Category("{date}", "#40e0d0");
-  cDict.addCategory(date);
-  var x = new Category("{x}", "#c48891");
-  cDict.addCategory(x);
-  var y = new Category("{y}", "#acc9ec");
-  cDict.addCategory(y);
-  var z = new Category("{z}", "#ffff94");
-  cDict.addCategory(z);
-  
-  return cDict;
 }
 
 function searchAndReplace(url) {
@@ -142,17 +136,17 @@ function searchAndReplace(url) {
     }
     
     // go through each category type; highlight and locate each instance of each category accordingly
-    for (var i=0; i<dict.dict.length; i++){    
+    for (var i=0; i<dict.length; i++){    
       // find first instance of category
-      var item = par.findText(dict.dict[i].name);
+      var item = par.findText(dict[i].name);
       while (item != null){
-        item.getElement().asText().setBackgroundColor(item.getStartOffset(),item.getEndOffsetInclusive(), dict.dict[i].color);
+        item.getElement().asText().setBackgroundColor(item.getStartOffset(),item.getEndOffsetInclusive(), dict[i].color);
         
         // add to dictionary of current category
-        dict.dict[i].catDict.push(item);
+        dict[i].catDict.push(item);
 
         // find the next instance of category in the same full string of paragraph
-        item = par.findText(dict.dict[i].name, item);
+        item = par.findText(dict[i].name, item);
       }
     }
   }
