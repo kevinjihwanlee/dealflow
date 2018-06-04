@@ -16,17 +16,40 @@ function myFunction(){
 }
 
 // holds info for each category: name, color, current value of the category
-var Category = function(name, color){
+var Category = function(name, color, currentValue){
   this.name = name;
   this.color = color;
-  this.currentValue = "";
+  this.currentValue = currentValue;
 };
 
+// allFilesInFolder
+// input: name of folder as string
+// output: all names of files within folder as array of URLs stored as strings
+function allFilesInFolder(name){
+  var urls = [];
+  var folders = DriveApp.getFoldersByName(name);
+  while (folders.hasNext()) {
+    var folder = folders.next();
+    var files = folder.getFiles();
+    while(files.hasNext()){
+      var file = files.next();
+      if(file.getUrl().indexOf('spreadsheets') == -1){
+         urls.push(file.getUrl());
+      }
+    }
+  }
+  return urls;
+}
+
 // initializeCategoriesInDoc
-// input: name of document as string
-// output: array of Categories from this one document
-function initializeCategoriesInDoc(url){
-  var categories = [];
+// input: name of document as string, array representing overarching array of Categories, counter where colors last left off
+// output: object that contains: array of Categories from this one document, array of unique Category names, counter where colors leave off
+function initializeCategoriesInDoc(url, cats, cc){
+  var output = {
+    categories: [],
+    uniqueCategories: cats,
+    counter: cc
+  };
   // curated list of colors for highlighting - picked from the third row of flat design color chart
   // https://htmlcolorcodes.com/color-chart/
   var colors = [
@@ -38,8 +61,6 @@ function initializeCategoriesInDoc(url){
     "#F9E79F",
     "#F5CBA7",
   ];
-  var counter = 0;
-  var uniqueCategories = [];
   var doc = DocumentApp.openByUrl(url).getBody();
   var allParagraphs = doc.getParagraphs();
   for each(var par in allParagraphs){
@@ -50,7 +71,7 @@ function initializeCategoriesInDoc(url){
       var withinCategory = new Boolean(false);
       var position = {
         beginning: 0,
-        end: 0,
+        end: 0
       }
       while(currPos < endPos){
         var char = fullString.substring(currPos, currPos + 1);
@@ -62,12 +83,11 @@ function initializeCategoriesInDoc(url){
           if(char == "}"){
             position.end = currPos + 1;
             var word = fullString.substring(position.beginning, position.end);
-            if(!(uniqueCategories.indexOf(word) > -1)){
-              var category = new Category(word, colors[counter]);
-              Logger.log(category);
-              categories.push(category);
-              uniqueCategories.push(word);
-              counter++;
+            if(!(output.uniqueCategories.indexOf(word) > -1)){
+              var category = new Category(word, colors[output.counter], word);
+              output.categories.push(category);
+              output.uniqueCategories.push(word);
+              output.counter++;
             }
             withinCategory = false;
           }
@@ -76,10 +96,40 @@ function initializeCategoriesInDoc(url){
       }
     }
   }
-  return categories;
+  //Logger.log(output);
+  return output;
 }
 
-
+// initializeAllCategories
+// input: name of folder as string
+// output: URL of spreadsheet created
+function initializeAllCategories(url){
+  var finalCats = []
+  var uniqueCategories = []
+  var cc = 0;
+  var allFiles = allFilesInFolder('dealflow');
+  for each (var url in allFiles){
+    var cats = initializeCategoriesInDoc(url, uniqueCategories, cc);
+    if(cats.categories.length > 0){
+      finalCats = finalCats.concat(cats.categories);
+      uniqueCategories = cats.uniqueCategories;
+      cc = cats.counter;
+    }
+  }
+  // as of right now, this creates in the root folder, maybe figure out how to move it into the dealflow folder
+  // should work fine for right now though
+  var ss = SpreadsheetApp.create("dealflow-values");
+  var sheet = ss.getSheets()[0];
+  for each (var item in finalCats){
+    var entry = [];
+    entry.push(item.name);
+    entry.push(item.color);
+    entry.push(item.currentValue);
+    sheet.appendRow(entry);
+  }
+  Logger.log(finalCats);
+  return ss.getUrl();
+}
 // need to initialize 
 // initialization with dummy categories
 function initializeCategoryDictionary(){
@@ -128,24 +178,6 @@ function checkSpreadsheet() {
 
 }
 
-// allFilesInFolder
-// input: name of folder as string
-// output: all names of files within folder as array of URLs stored as strings
-function allFilesInFolder(name){
-  var urls = [];
-  var folders = DriveApp.getFoldersByName(name);
-  while (folders.hasNext()) {
-    var folder = folders.next();
-    var files = folder.getFiles();
-    while(files.hasNext()){
-      var file = files.next();
-      if(file.getUrl().indexOf('spreadsheets') == -1){
-         urls.push(file.getUrl());
-      }
-    }
-  }
-  return urls;
-}
 
 function searchAndReplace(url) {
   var dict = initializeCategoryDictionary();
@@ -232,5 +264,5 @@ function main(){
   ///  searchAndReplace(url);
   ///}
   
-  initializeCategoriesInDoc("https://docs.google.com/document/d/1Vh90jt3KDO6EH--RgZW6IwNcZZbGfo00Vxaffw2L5u0/edit");
+  initializeAllCategories();
 }
