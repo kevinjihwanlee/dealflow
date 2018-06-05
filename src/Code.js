@@ -3,7 +3,7 @@
 
 function createDocumentOpenTrigger(url) {
   var doc = DocumentApp.openByUrl(url);
-  ScriptApp.newTrigger('lastVisitedDoc')
+  ScriptApp.newTrigger('checkChanges')
       .forDocument(doc)
       .onOpen()
       .create();
@@ -253,92 +253,71 @@ function checkChanges(){
         }
       }
     }
+    // and then we have to update the current document fuuuu
+    var doc = DocumentApp.getActiveDocument().getBody();
+    // this is a function, just make code that works for now and then put into function later
+    var allParagraphs = doc.getParagraphs();
+    for each(var par in allParagraphs){
+      var fullString = par.getText();
+      if(fullString != ""){
+        var startPos = 0;
+        var endPos = fullString.length;
+        var colorPresence = new Boolean(false);
+        var position = {
+          beginning: 0,
+          end: 1
+        };
+        while(startPos < endPos){
+          var char = fullString.substring(startPos, startPos + 1);
+          var isThereColor = par.editAsText().getBackgroundColor(startPos);
+          if(isThereColor != null){
+            var color = isThereColor;
+            if(colorPresence == false){
+              position.beginning = startPos;
+            }
+            colorPresence = true;
+          }
+          else{
+            if(colorPresence){
+              position.end = startPos;
+              
+              // THIS PART HERE ISN'T REALLY DETECTING THE RIGHT WORDS //
+              
+              
+              var word = fullString.substring(position.beginning, position.end);
+              
+              
+              
+              if(word != "") { 
+                for each (var obj in categories){
+                  if(obj.color == color.toUpperCase()){
+                    Logger.log(word)
+                    doc.replaceText(word, obj.currentValue);
+                  }
+                }
+              }
+              colorPresence = false;
+            }
+          }
+          startPos++;
+        }
+      }
+    }
+    // now we have to update categories spreadsheet
+    var updateSheet = ss.getSheets()[0];
+    updateSheet.clear();
+    for each (var cat in categories){
+      var entry = [];
+      entry.push(cat.name);
+      entry.push(cat.color);
+      entry.push(cat.currentValue);
+      updateSheet.appendRow(entry);
+    }
   }
   else {
     Logger.log("We do not have a document here.");
   }
-  // now we have to update categories spreadsheet
-  var updateSheet = ss.getSheets()[0];
-  updateSheet.clear();
-  for each (var cat in categories){
-    var entry = [];
-    entry.push(cat.name);
-    entry.push(cat.color);
-    entry.push(cat.currentValue);
-    updateSheet.appendRow(entry);
-  }
-  
-}
-
-function searchAndReplace(url) {
-  var dict = initializeCategoryDictionary();
-  var doc = DocumentApp.openByUrl(url).getBody();
-  var words = [];
-  var allParagraphs = doc.getParagraphs();
-  
-  // go through each paragraph 
-  for each(var par in allParagraphs){
-    // get the entire paragraph text
-    var fullString = par.getText();
-    // continue if the paragraph is not null
-    if(fullString != ""){
-      var startPos = 0;
-      var endPos = fullString.length;
-      var colorPresence = new Boolean(false);
-      var position = {
-        beginning: 0,
-        end: 1
-      };
-      while(startPos < endPos){
-        var char = fullString.substring(startPos, startPos + 1);
-        var isThereColor = par.editAsText().getBackgroundColor(startPos);
-        
-        // check if current character is highlighted
-        if(isThereColor != null){
-          if(colorPresence == false){
-            // mark the start position here
-            position.beginning = startPos;
-
-          }
-          colorPresence = true;
-
-        }
-        else{
-          if(colorPresence){
-            // mark the end position here
-            position.end = startPos;
-            var word = fullString.substring(position.beginning, position.end);
-            //if(word != ""){
-              
-            //}
-            words.push(word);
-            //Logger.log('The end is here: ' + String(startPos));
-            colorPresence = false;
-          }
-          //Logger.log("WE GOT NO COLOR HERE");
-        }
-        startPos++;
-      }
-      //Logger.log(words);
-    }
-    
-    // go through each category type; highlight and locate each instance of each category accordingly
-    for (var i=0; i<dict.length; i++){    
-      // find first instance of category
-      var item = par.findText(dict[i].name);
-      while (item != null){
-        item.getElement().asText().setBackgroundColor(item.getStartOffset(),item.getEndOffsetInclusive(), dict[i].color);
-        
-        // add to dictionary of current category
-        // I don't think this does something as of rn
-        // dict[i].catDict = item;
-
-        // find the next instance of category in the same full string of paragraph
-        item = par.findText(dict[i].name, item);
-      }
-    }
-  }
-  Logger.log(dict);
+  lastVisitedDoc();
 }
 
 function main(){
