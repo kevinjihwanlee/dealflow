@@ -124,6 +124,8 @@ function initializeAllCategories(url){
     sheet.appendRow(entry);
   }
   ss.insertSheet();
+  var sheet = ss.getSheets()[1];
+  sheet.appendRow(['last visited page', 'NA']);
   //Logger.log(finalCats);
   return ss.getUrl();
 }
@@ -177,7 +179,7 @@ function lastVisitedDoc(){
   var ss = SpreadsheetApp.openByUrl(dictUrl);
   var sheet = ss.getSheets()[1];
   sheet.clear()
-  sheet.appendRow(["last visited page", doc.getUrl()]);
+  sheet.appendRow(["last visited page", doc.getId()]);
 }
 
 
@@ -185,13 +187,87 @@ function lastVisitedDoc(){
 /// input: 
 /// output: 
 
-function checkChanges(dictUrl, docUrls){
-  var categories = retrieveCategories(dictUrl);
-  for each(var url in docUrls){
-    var doc = DocumentApp.openByUrl(url).getBody();
-    var allParagraphs = doc.getParagraphs();
-    
+function checkChanges(){
+  /* i should structure this function
+  access the dealflow dict
+  check sheet[1]
+  if there is a last visited url there
+    go to that file, update the dealflow dict
+    use the dealflow dict to update the currently open document
+  update the last visited url
+  */
+  var findDict = DriveApp.getFilesByName('dealflow-values');
+  while(findDict.hasNext()){
+      var file = findDict.next();
+      var dictUrl = file.getUrl();
   }
+  var categories = retrieveCategories(dictUrl);
+  var changedCat = [];
+  var ss = SpreadsheetApp.openByUrl(dictUrl);
+  var sheet = ss.getSheets()[1];
+  var values = sheet.getSheetValues(1, 1, -1, -1);
+  if (values[0][1] != "NA"){
+    Logger.log("We have a document here.");
+    var doc = DocumentApp.openById(values[0][1]).getBody();
+    // this is a function, just make code that works for now and then put into function later
+    var allParagraphs = doc.getParagraphs();
+    for each(var par in allParagraphs){
+      var fullString = par.getText();
+      if(fullString != ""){
+        var startPos = 0;
+        var endPos = fullString.length;
+        var colorPresence = new Boolean(false);
+        var position = {
+          beginning: 0,
+          end: 1
+        };
+        while(startPos < endPos){
+          var char = fullString.substring(startPos, startPos + 1);
+          var isThereColor = par.editAsText().getBackgroundColor(startPos);
+          if(isThereColor != null){
+            var color = isThereColor;
+            if(colorPresence == false){
+              position.beginning = startPos;
+            }
+            colorPresence = true;
+          }
+          else{
+            if(colorPresence){
+              position.end = startPos;
+              var word = fullString.substring(position.beginning, position.end);
+              if(word != "") { 
+                for each (var obj in categories){
+                  if(obj.color == color.toUpperCase()){
+                    // currently set up so that it saves the first instance that has changed.
+                    if(changedCat.indexOf(obj.name) == -1){
+                      obj.currentValue = word;
+                      changedCat.push(obj.name);
+                    }
+                  }
+                }
+              }
+              colorPresence = false;
+            }
+          }
+          startPos++;
+        }
+      }
+    }
+  }
+  else {
+    Logger.log("We do not have a document here.");
+  }
+  // now we have to update categories spreadsheet
+  var updateSheet = ss.getSheets()[0];
+  updateSheet.clear();
+  for each (var cat in categories){
+    var entry = [];
+    entry.push(cat.name);
+    entry.push(cat.color);
+    entry.push(cat.currentValue);
+    updateSheet.appendRow(entry);
+  }
+  
 }
 
 function searchAndReplace(url) {
@@ -222,10 +298,10 @@ function searchAndReplace(url) {
           if(colorPresence == false){
             // mark the start position here
             position.beginning = startPos;
-            //Logger.log('The start is here: ' + String(startPos));
+
           }
           colorPresence = true;
-          //Logger.log("THERE IS COLOR HERE");
+
         }
         else{
           if(colorPresence){
