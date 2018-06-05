@@ -290,7 +290,8 @@ function checkChanges(){
           else{
             if(colorPresence){
               position.end = startPos;          
-              var word = fullString.substring(position.beginning, position.end);             
+              var word = fullString.substring(position.beginning, position.end);
+              Logger.log(word);
               if(word != "") { 
                 for each (var obj in categories){
                   if(obj.color == color.toUpperCase()){
@@ -298,7 +299,7 @@ function checkChanges(){
                       word = '\\' + word + '\\';
                     }
                     word = word + '+';
-                    Logger.log(word);
+                    //Logger.log(word);
                     words.push([word, obj.currentValue]);
                   }
                 }
