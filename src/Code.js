@@ -123,6 +123,7 @@ function initializeAllCategories(url){
     entry.push(item.currentValue);
     sheet.appendRow(entry);
   }
+  ss.insertSheet();
   //Logger.log(finalCats);
   return ss.getUrl();
 }
@@ -174,9 +175,9 @@ function lastVisitedDoc(){
       var dictUrl = file.getUrl();
   }
   var ss = SpreadsheetApp.openByUrl(dictUrl);
-  var sheet = ss.getSheets()[0];
+  var sheet = ss.getSheets()[1];
+  sheet.clear()
   sheet.appendRow(["last visited page", doc.getUrl()]);
-  Logger.log(["last visited page", doc.getUrl()]);
 }
 
 
