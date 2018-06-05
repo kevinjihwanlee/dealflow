@@ -297,9 +297,9 @@ function checkChanges(){
                     if(obj.currentValue.indexOf("}") != -1 || obj.currentValue.indexOf("{") != -1){
                       word = '\\' + word + '\\';
                     }
+                    word = word + '+';
                     Logger.log(word);
                     words.push([word, obj.currentValue]);
-                    //doc.replaceText(word, obj.currentValue);
                   }
                 }
               }
@@ -311,7 +311,7 @@ function checkChanges(){
       }
     }
     for each(var term in words){
-     //doc.replaceText(term[0], term[1]);  
+     doc.replaceText(term[0], term[1]);  
     }
     Logger.log(words);
   }
