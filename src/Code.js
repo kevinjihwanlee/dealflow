@@ -1,19 +1,15 @@
 // look into this : https://developers.google.com/apps-script/guides/triggers/installable
 // can trigger on document opening or by time! 
 
-function createDocumentOpenTrigger() {
-  var doc = DocumentApp.openByUrl('https://docs.google.com/document/d/1O1jU-DypJflBggimwKLmNosmJhdVOr6trN7xdjKOwoU/edit');
-  ScriptApp.newTrigger('myFunction')
+function createDocumentOpenTrigger(url) {
+  var doc = DocumentApp.openByUrl(url);
+  ScriptApp.newTrigger('lastVisitedDoc')
       .forDocument(doc)
       .onOpen()
       .create();
 }
 
 // The trigger needs to be a function that does the parsing and then checks for the colors and then update - very very doable.
-
-function myFunction(){
-  Logger.log("The trigger has occurred on open.")
-}
 
 // holds info for each category: name, color, current value of the category
 var Category = function(name, color, currentValue){
@@ -131,7 +127,10 @@ function initializeAllCategories(url){
   return ss.getUrl();
 }
 
-function colorCategories(dictUrl, docUrls){
+// retrieveCategories
+// input: spreadsheet URL containing all categories
+// output: array of Categories 
+function retrieveCategories(dictUrl){
   var ss = SpreadsheetApp.openByUrl(dictUrl)
   var sheet = ss.getSheets()[0];
   var values = sheet.getSheetValues(1, 1, -1, -1);
@@ -140,6 +139,14 @@ function colorCategories(dictUrl, docUrls){
     cat = new Category(value[0], value[1], value[2]);
     categories.push(cat);
   }
+  return categories;
+}
+
+/// colorCategories
+/// input: spreadsheet URL containing all categories, all Google Doc URLs
+/// output: None
+function colorCategories(dictUrl, docUrls){
+  var categories = retrieveCategories(dictUrl);
   for each(var url in docUrls){
     var doc = DocumentApp.openByUrl(url).getBody();
     var allParagraphs = doc.getParagraphs();
@@ -156,16 +163,40 @@ function colorCategories(dictUrl, docUrls){
       }
     }
   }
-  Logger.log(categories);
+}
+
+/// trigger function that stores the URL of the most recently opened document
+function lastVisitedDoc(){
+  var doc = DocumentApp.getActiveDocument();
+  var findDict = DriveApp.getFilesByName('dealflow-values');
+  while(findDict.hasNext()){
+      var file = findDict.next();
+      var dictUrl = file.getUrl();
+  }
+  var ss = SpreadsheetApp.openByUrl(dictUrl);
+  var sheet = ss.getSheets()[0];
+  sheet.appendRow(["last visited page", doc.getUrl()]);
+  Logger.log(["last visited page", doc.getUrl()]);
+}
+
+
+/// FUNCTION - this is the trigger that runs when you open a doc? it should parse through all documents, check colors, repopulate the spreadsheet with initial values
+/// input: 
+/// output: 
+
+function checkChanges(dictUrl, docUrls){
+  var categories = retrieveCategories(dictUrl);
+  for each(var url in docUrls){
+    var doc = DocumentApp.openByUrl(url).getBody();
+    var allParagraphs = doc.getParagraphs();
+    
+  }
 }
 
 function searchAndReplace(url) {
   var dict = initializeCategoryDictionary();
-  
   var doc = DocumentApp.openByUrl(url).getBody();
-  
   var words = [];
-
   var allParagraphs = doc.getParagraphs();
   
   // go through each paragraph 
@@ -239,10 +270,12 @@ function main(){
   // TODO: scan through all files and initialize a category dictionary
   // TODO: add trigger functions to each files while scanning - on open, all documents are scanned and checked for differences,
   //       and then each file is updated accordingly
-  
-  ///for each (var url in allFiles){
-  ///  searchAndReplace(url);
-  ///}
-  
-  colorCategories(initializeAllCategories(), allFiles);
+
+  var dictUrl = initializeAllCategories();
+  colorCategories(dictUrl, allFiles);
+  for each (var url in allFiles){
+    createDocumentOpenTrigger(url);
+  }
+  var findDict = DriveApp.getFilesByName('dealflow-values');
+  Logger.log(findDict);
 }
