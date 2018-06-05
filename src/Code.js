@@ -92,7 +92,6 @@ function initializeCategoriesInDoc(url, cats, cc){
       }
     }
   }
-  //Logger.log(output);
   return output;
 }
 
@@ -126,7 +125,6 @@ function initializeAllCategories(url){
   ss.insertSheet();
   var sheet = ss.getSheets()[1];
   sheet.appendRow(['last visited page', 'NA']);
-  //Logger.log(finalCats);
   return ss.getUrl();
 }
 
@@ -257,7 +255,6 @@ function checkChanges(){
     var updateSheet = ss.getSheets()[0];
     updateSheet.clear();
     for each (var cat in categories){
-      Logger.log(cat.currentValue);
       var entry = [];
       entry.push(cat.name);
       entry.push(cat.color);
@@ -265,12 +262,14 @@ function checkChanges(){
       updateSheet.appendRow(entry);
     }
     // and then we have to update the current document fuuuu
+    var words = [];
     var doc = DocumentApp.getActiveDocument().getBody();
     // this is a function, just make code that works for now and then put into function later
     var allParagraphs = doc.getParagraphs();
     for each(var par in allParagraphs){
       var fullString = par.getText();
       if(fullString != ""){
+
         var startPos = 0;
         var endPos = fullString.length;
         var colorPresence = new Boolean(false);
@@ -290,22 +289,17 @@ function checkChanges(){
           }
           else{
             if(colorPresence){
-              position.end = startPos;
-              
-              // THIS PART HERE ISN'T REALLY DETECTING THE RIGHT WORDS //
-              
-              var word = fullString.substring(position.beginning, position.end);
-              
+              position.end = startPos;          
+              var word = fullString.substring(position.beginning, position.end);             
               if(word != "") { 
                 for each (var obj in categories){
                   if(obj.color == color.toUpperCase()){
-                    //Logger.log(word)
                     if(obj.currentValue.indexOf("}") != -1 || obj.currentValue.indexOf("{") != -1){
-                      //Logger.log('do we get here?');
                       word = '\\' + word + '\\';
-                      //Logger.log(obj.currentValue);
                     }
-                    doc.replaceText(word, obj.currentValue);
+                    Logger.log(word);
+                    words.push([word, obj.currentValue]);
+                    //doc.replaceText(word, obj.currentValue);
                   }
                 }
               }
@@ -315,8 +309,11 @@ function checkChanges(){
           startPos++;
         }
       }
-          Logger.log('hello?');
     }
+    for each(var term in words){
+     //doc.replaceText(term[0], term[1]);  
+    }
+    Logger.log(words);
   }
   else {
     Logger.log("We do not have a document here.");
@@ -337,5 +334,4 @@ function main(){
     createDocumentOpenTrigger(url);
   }
   var findDict = DriveApp.getFilesByName('dealflow-values');
-  Logger.log(findDict);
 }
