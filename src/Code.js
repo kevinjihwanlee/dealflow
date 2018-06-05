@@ -253,6 +253,17 @@ function checkChanges(){
         }
       }
     }
+    // now we have to update categories spreadsheet
+    var updateSheet = ss.getSheets()[0];
+    updateSheet.clear();
+    for each (var cat in categories){
+      Logger.log(cat.currentValue);
+      var entry = [];
+      entry.push(cat.name);
+      entry.push(cat.color);
+      entry.push(cat.currentValue);
+      updateSheet.appendRow(entry);
+    }
     // and then we have to update the current document fuuuu
     var doc = DocumentApp.getActiveDocument().getBody();
     // this is a function, just make code that works for now and then put into function later
@@ -283,15 +294,17 @@ function checkChanges(){
               
               // THIS PART HERE ISN'T REALLY DETECTING THE RIGHT WORDS //
               
-              
               var word = fullString.substring(position.beginning, position.end);
-              
-              
               
               if(word != "") { 
                 for each (var obj in categories){
                   if(obj.color == color.toUpperCase()){
-                    Logger.log(word)
+                    //Logger.log(word)
+                    if(obj.currentValue.indexOf("}") != -1 || obj.currentValue.indexOf("{") != -1){
+                      //Logger.log('do we get here?');
+                      word = '\\' + word + '\\';
+                      //Logger.log(obj.currentValue);
+                    }
                     doc.replaceText(word, obj.currentValue);
                   }
                 }
@@ -302,16 +315,7 @@ function checkChanges(){
           startPos++;
         }
       }
-    }
-    // now we have to update categories spreadsheet
-    var updateSheet = ss.getSheets()[0];
-    updateSheet.clear();
-    for each (var cat in categories){
-      var entry = [];
-      entry.push(cat.name);
-      entry.push(cat.color);
-      entry.push(cat.currentValue);
-      updateSheet.appendRow(entry);
+          Logger.log('hello?');
     }
   }
   else {
