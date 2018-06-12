@@ -1,6 +1,3 @@
-// look into this : https://developers.google.com/apps-script/guides/triggers/installable
-// can trigger on document opening or by time! 
-
 function createDocumentOpenTrigger(url) {
   var doc = DocumentApp.openByUrl(url);
   ScriptApp.newTrigger('checkChanges')
@@ -8,8 +5,6 @@ function createDocumentOpenTrigger(url) {
       .onOpen()
       .create();
 }
-
-// The trigger needs to be a function that does the parsing and then checks for the colors and then update - very very doable.
 
 // holds info for each category: name, color, current value of the category
 var Category = function(name, color, currentValue){
@@ -111,8 +106,7 @@ function initializeAllCategories(url){
       cc = cats.counter;
     }
   }
-  // as of right now, this creates in the root folder, maybe figure out how to move it into the dealflow folder
-  // should work fine for right now though
+  // as of right now, this creates in the root folder
   var ss = SpreadsheetApp.create("dealflow-values");
   var sheet = ss.getSheets()[0];
   for each (var item in finalCats){
@@ -180,20 +174,7 @@ function lastVisitedDoc(){
   sheet.appendRow(["last visited page", doc.getId()]);
 }
 
-
-/// FUNCTION - this is the trigger that runs when you open a doc? it should parse through all documents, check colors, repopulate the spreadsheet with initial values
-/// input: 
-/// output: 
-
 function checkChanges(){
-  /* i should structure this function
-  access the dealflow dict
-  check sheet[1]
-  if there is a last visited url there
-    go to that file, update the dealflow dict
-    use the dealflow dict to update the currently open document
-  update the last visited url
-  */
   var findDict = DriveApp.getFilesByName('dealflow-values');
   while(findDict.hasNext()){
       var file = findDict.next();
@@ -261,10 +242,9 @@ function checkChanges(){
       entry.push(cat.currentValue);
       updateSheet.appendRow(entry);
     }
-    // and then we have to update the current document fuuuu
+    // and then we have to update the current document
     var words = [];
     var doc = DocumentApp.getActiveDocument().getBody();
-    // this is a function, just make code that works for now and then put into function later
     var allParagraphs = doc.getParagraphs();
     for each(var par in allParagraphs){
       var fullString = par.getText();
@@ -299,7 +279,6 @@ function checkChanges(){
                       word = '\\' + word + '\\';
                     }
                     word = word + '+';
-                    //Logger.log(word);
                     words.push([word, obj.currentValue]);
                   }
                 }
@@ -324,11 +303,6 @@ function checkChanges(){
 
 function main(){
   var allFiles = allFilesInFolder('dealflow');
-  
-  // TODO: scan through all files and initialize a category dictionary
-  // TODO: add trigger functions to each files while scanning - on open, all documents are scanned and checked for differences,
-  //       and then each file is updated accordingly
-
   var dictUrl = initializeAllCategories();
   colorCategories(dictUrl, allFiles);
   for each (var url in allFiles){
